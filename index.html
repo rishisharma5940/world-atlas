@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Global Geography Atlas & World Map Explorer</title>
   
-  <!-- Leaflet CSS for Map Rendering -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
@@ -25,7 +24,6 @@
       color: #0f172a;
     }
 
-    /* Top Navigation Bar */
     header {
       background-color: #0f172a;
       color: #ffffff;
@@ -72,9 +70,6 @@
       border: none;
       font-weight: bold;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
     }
 
     button:hover {
@@ -89,7 +84,6 @@
       background-color: #047857;
     }
 
-    /* Main Container */
     #main-container {
       display: flex;
       flex: 1;
@@ -103,7 +97,6 @@
       z-index: 1;
     }
 
-    /* Information Panel */
     #sidebar {
       width: 340px;
       max-width: 85%;
@@ -150,9 +143,7 @@
 
     .badge-choke { background-color: #fee2e2; color: #dc2626; }
     .badge-river { background-color: #e0f2fe; color: #0284c7; }
-    .badge-ocean { background-color: #dbeafe; color: #1d4ed8; }
     .badge-mountain { background-color: #fef3c7; color: #d97706; }
-    .badge-country { background-color: #f3e8ff; color: #7e22ce; }
 
     .fact-card {
       background-color: #f8fafc;
@@ -168,7 +159,6 @@
       background-color: #f1f5f9;
     }
 
-    /* Print / High Resolution 4K Export Styles */
     @media print {
       header, #sidebar, .leaflet-control-zoom, .leaflet-control-layers {
         display: none !important;
@@ -190,12 +180,11 @@
 
   <header>
     <div class="title-area">
-      <h1>World Geography Explorer</h1>
+      <h1>World Geography Explorer (English)</h1>
       <p>Political, Physical, Combined Topography & Strategic Choke Points</p>
     </div>
 
     <div class="controls-area">
-      <!-- Quick Zoom Locations -->
       <select id="quickSelect" onchange="zoomToQuickLocation(this.value)">
         <option value="">Quick Location Finder...</option>
         <optgroup label="Deep District Zoom">
@@ -233,9 +222,10 @@
       <div class="sidebar-body" id="panelBody">
         <p><strong>Instructions for Users:</strong></p>
         <ul style="margin: 8px 0 12px 18px;">
-          <li>Use the top-right box on the map to switch between <strong>Political</strong>, <strong>Physical Topo</strong>, <strong>Relief</strong>, and <strong>Satellite Combined</strong> maps.</li>
-          <li>Pinch or use two fingers to zoom in deeply. You can zoom all the way down to local district lines, highways, and ports in any country, including <strong>Goa</strong>.</li>
-          <li>Click any colored marker on the map to display its facts and geopolitical data below.</li>
+          <li>All labels and country names are strictly in <strong>English</strong>.</li>
+          <li>Use the top-right box to switch between <strong>Political</strong>, <strong>Physical Topo</strong>, <strong>Relief</strong>, and <strong>Satellite Combined</strong> maps.</li>
+          <li>Pinch to zoom in. You can zoom all the way down to Goa's district borders, ports, and towns.</li>
+          <li>Tap any colored pin to read geographic details.</li>
         </ul>
 
         <h3 style="font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-top: 15px;">Featured Choke Points:</h3>
@@ -243,77 +233,75 @@
         <div class="fact-card" onclick="zoomToQuickLocation('hormuz')">
           <span class="badge badge-choke">Choke Point</span>
           <h4>Strait of Hormuz</h4>
-          <p>Between Oman and Iran. Connects the Persian Gulf with the Gulf of Oman. World's most critical oil passage.</p>
+          <p>Between Oman and Iran. Connects Persian Gulf to Gulf of Oman. World's most vital oil passage.</p>
         </div>
 
         <div class="fact-card" onclick="zoomToQuickLocation('malacca')">
           <span class="badge badge-choke">Choke Point</span>
           <h4>Strait of Malacca</h4>
-          <p>Between Indonesia, Malaysia, and Singapore. The shortest sea route connecting the Indian and Pacific Oceans.</p>
+          <p>Between Indonesia, Malaysia, and Singapore. Shortest sea route connecting Indian and Pacific Oceans.</p>
         </div>
 
         <div class="fact-card" onclick="zoomToQuickLocation('bab')">
           <span class="badge badge-choke">Choke Point</span>
           <h4>Bab-el-Mandeb</h4>
-          <p>Connects the Red Sea to the Gulf of Aden. Essential entry gate for maritime cargo traveling toward Europe via Suez.</p>
+          <p>Connects Red Sea to Gulf of Aden. Essential entry gate for cargo traveling toward Europe via Suez.</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Leaflet JavaScript Library -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    /* ================= MAP LAYERS ================= */
+    /* ================= 100% ENGLISH BASE MAP LAYERS ================= */
 
-    // 1. Political Base Map (Clear country borders, state/district borders, capitals, cities, ports)
-    const politicalLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    // 1. Political Base (CartoDB Voyager - English text worldwide)
+    const politicalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      attribution: 'OpenStreetMap Contributors'
+      subdomains: 'abcd',
+      attribution: '&copy; CartoDB & OpenStreetMap'
     });
 
-    // 2. Physical Topography Map (Mountains, elevation contour shading, valleys, plains)
-    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
-      maxZoom: 17,
-      attribution: 'OpenTopoMap & SRTM Elevation'
+    // 2. Physical Topography Map (English Esri Topo)
+    const topoBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Esri World Topographic'
     });
 
-    // 3. Global Physical Relief (Esri Physical World Map)
+    // 3. Global Physical Relief
     const physicalReliefLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 8,
-      attribution: 'Esri, US National Park Service'
+      attribution: 'Esri World Physical'
     });
 
-    // 4. Combined / Hybrid Map (High-Resolution Satellite Imagery + Country Boundaries & Labels)
+    // 4. Combined Satellite + English Labels
     const satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
       attribution: 'Esri World Imagery'
     });
 
-    const administrativeLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    const englishLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
-      attribution: 'Esri Reference Labels'
+      attribution: 'Esri Reference'
     });
 
-    const combinedLayer = L.layerGroup([satelliteImagery, administrativeLabels]);
+    const combinedLayer = L.layerGroup([satelliteImagery, englishLabels]);
 
-    /* ================= INITIALIZE MAP VIEW ================= */
+    /* ================= MAP INITIALIZATION ================= */
     const map = L.map('map', {
       center: [20, 10],
       zoom: 3,
       layers: [politicalLayer]
     });
 
-    // Map Layer Controls
     const baseMaps = {
-      "Political Map (Capitals, Cities & Borders)": politicalLayer,
-      "Physical Topographic Map (Mountains & Relief)": topoLayer,
+      "Political Map (English Labels & Borders)": politicalLayer,
+      "Physical Topographic Map (English)": topoBase,
       "Global Physical Map (Elevation Relief)": physicalReliefLayer,
-      "Combined Hybrid Map (Satellite + Borders)": combinedLayer
+      "Combined Hybrid Map (Satellite + English Labels)": combinedLayer
     };
 
-    // Geographic Feature Marker Groups
     const chokePointsGroup = L.layerGroup();
     const waterBodiesGroup = L.layerGroup();
     const mountainsGroup = L.layerGroup();
@@ -326,14 +314,12 @@
 
     L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
 
-    // Keep all features enabled by default
     map.addLayer(chokePointsGroup);
     map.addLayer(waterBodiesGroup);
     map.addLayer(mountainsGroup);
 
-    /* ================= GEOGRAPHIC FACT DATA ================= */
+    /* ================= GEOGRAPHIC DATA ================= */
     const geoLocations = [
-      // Choke Points
       {
         name: "Strait of Malacca",
         category: "choke",
@@ -346,7 +332,7 @@
         category: "choke",
         lat: 26.56,
         lng: 56.25,
-        details: "Positioned between Oman and Iran. It connects the Persian Gulf with the Gulf of Oman. Around 21 million barrels of crude oil pass through it daily."
+        details: "Positioned between Oman and Iran. Connects the Persian Gulf with the Gulf of Oman. Around 21 million barrels of crude oil pass through it daily."
       },
       {
         name: "Bab-el-Mandeb",
@@ -383,8 +369,6 @@
         lng: 29.07,
         details: "Turkish straits dividing Europe from Asia, connecting the Black Sea to the Sea of Marmara and the Mediterranean Sea."
       },
-
-      // Water Bodies
       {
         name: "Amazon River Basin",
         category: "river",
@@ -399,8 +383,6 @@
         lng: 30.80,
         details: "Flows northward through eastern Africa into the Mediterranean Sea. Known historically as the lifeblood of Egyptian civilization."
       },
-
-      // Mountain Ranges
       {
         name: "Himalayas Mountain Range",
         category: "mountain",
@@ -410,7 +392,6 @@
       }
     ];
 
-    // Marker styling
     function buildMarker(category) {
       let color = '#2563eb';
       if (category === 'choke') color = '#dc2626';
@@ -425,7 +406,6 @@
       });
     }
 
-    // Add Markers to Map
     geoLocations.forEach(loc => {
       const marker = L.marker([loc.lat, loc.lng], { icon: buildMarker(loc.category) });
       marker.on('click', () => {
@@ -437,7 +417,6 @@
       else if (loc.category === 'mountain') marker.addTo(mountainsGroup);
     });
 
-    /* ================= SIDEBAR DISPLAY LOGIC ================= */
     function displayInformation(item) {
       document.getElementById('panelTitle').innerText = item.name;
       let badgeClass = 'badge-choke';
@@ -450,13 +429,12 @@
         <p style="margin-bottom:10px; color:#64748b;"><strong>Coordinates:</strong> ${item.lat.toFixed(2)}°N, ${item.lng.toFixed(2)}°E</p>
         <p style="line-height:1.6; color:#1e293b;">${item.details}</p>
         <hr style="margin:14px 0; border:0; border-top:1px solid #e2e8f0;">
-        <button onclick="map.flyTo([${item.lat}, ${item.lng}], 7)" style="width:100%; justify-content:center;">Center Map Here</button>
+        <button onclick="map.flyTo([${item.lat}, ${item.lng}], 7)" style="width:100%; justify-content:center; padding:8px;">Center Map Here</button>
       `;
     }
 
-    /* ================= QUICK ZOOM LOCATIONS ================= */
     const locationsDirectory = {
-      goa: { lat: 15.2993, lng: 74.1240, zoom: 11 }, // Shows North Goa, South Goa, Mormugao port, Panaji, and taluk borders
+      goa: { lat: 15.2993, lng: 74.1240, zoom: 11 },
       malacca: { lat: 4.15, lng: 100.5, zoom: 6 },
       hormuz: { lat: 26.56, lng: 56.25, zoom: 7 },
       bab: { lat: 12.58, lng: 43.33, zoom: 7 },
@@ -477,7 +455,6 @@
       map.flyTo([target.lat, target.lng], target.zoom, { duration: 1.5 });
     }
 
-    /* ================= 4K HIGH DEFINITION PDF EXPORT ================= */
     function generate4KPDF() {
       map.invalidateSize();
       setTimeout(() => {
@@ -486,5 +463,4 @@
     }
   </script>
 </body>
-                                                       </html>
-                                                       
+</html>
