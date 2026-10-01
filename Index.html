@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Global Geography Atlas & World Map Explorer</title>
+  
+  <!-- Leaflet CSS for Map Rendering -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #f1f5f9;
+      color: #0f172a;
+    }
+
+    /* Top Navigation Bar */
+    header {
+      background-color: #0f172a;
+      color: #ffffff;
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 1000;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .title-area h1 {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .title-area p {
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    .controls-area {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    select, button {
+      padding: 7px 10px;
+      border-radius: 6px;
+      border: 1px solid #475569;
+      font-size: 0.82rem;
+      outline: none;
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+
+    button {
+      background-color: #2563eb;
+      color: #ffffff;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    button:hover {
+      background-color: #1d4ed8;
+    }
+
+    button.btn-pdf {
+      background-color: #059669;
+    }
+
+    button.btn-pdf:hover {
+      background-color: #047857;
+    }
+
+    /* Main Container */
+    #main-container {
+      display: flex;
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #map {
+      flex: 1;
+      height: 100%;
+      z-index: 1;
+    }
+
+    /* Information Panel */
+    #sidebar {
+      width: 340px;
+      max-width: 85%;
+      background-color: #ffffff;
+      border-left: 2px solid #e2e8f0;
+      display: flex;
+      flex-direction: column;
+      z-index: 999;
+      box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      background-color: #f8fafc;
+      padding: 12px 14px;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .sidebar-header h2 {
+      font-size: 0.95rem;
+      color: #0f172a;
+    }
+
+    .sidebar-body {
+      padding: 14px;
+      overflow-y: auto;
+      flex: 1;
+      font-size: 0.85rem;
+      line-height: 1.5;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: bold;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .badge-choke { background-color: #fee2e2; color: #dc2626; }
+    .badge-river { background-color: #e0f2fe; color: #0284c7; }
+    .badge-ocean { background-color: #dbeafe; color: #1d4ed8; }
+    .badge-mountain { background-color: #fef3c7; color: #d97706; }
+    .badge-country { background-color: #f3e8ff; color: #7e22ce; }
+
+    .fact-card {
+      background-color: #f8fafc;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      padding: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+
+    .fact-card:hover {
+      border-color: #2563eb;
+      background-color: #f1f5f9;
+    }
+
+    /* Print / High Resolution 4K Export Styles */
+    @media print {
+      header, #sidebar, .leaflet-control-zoom, .leaflet-control-layers {
+        display: none !important;
+      }
+      body, #main-container, #map {
+        height: 100% !important;
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      @page {
+        size: A3 landscape;
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="title-area">
+      <h1>World Geography Explorer</h1>
+      <p>Political, Physical, Combined Topography & Strategic Choke Points</p>
+    </div>
+
+    <div class="controls-area">
+      <!-- Quick Zoom Locations -->
+      <select id="quickSelect" onchange="zoomToQuickLocation(this.value)">
+        <option value="">Quick Location Finder...</option>
+        <optgroup label="Deep District Zoom">
+          <option value="goa">Goa (India - North & South District Borders)</option>
+        </optgroup>
+        <optgroup label="Strategic Maritime Choke Points">
+          <option value="malacca">Strait of Malacca</option>
+          <option value="hormuz">Strait of Hormuz</option>
+          <option value="bab">Bab-el-Mandeb Strait</option>
+          <option value="suez">Suez Canal</option>
+          <option value="gibraltar">Strait of Gibraltar</option>
+          <option value="panama">Panama Canal</option>
+          <option value="bosphorus">Bosporus & Dardanelles</option>
+        </optgroup>
+        <optgroup label="Major Topographies & Oceans">
+          <option value="himalayas">Himalayan Mountain Range</option>
+          <option value="amazon">Amazon Basin & River System</option>
+          <option value="nile">Nile River & Delta</option>
+          <option value="pacific">Pacific Ocean</option>
+          <option value="indian">Indian Ocean</option>
+        </optgroup>
+      </select>
+
+      <button class="btn-pdf" onclick="generate4KPDF()">Download 4K Map (PDF)</button>
+    </div>
+  </header>
+
+  <div id="main-container">
+    <div id="map"></div>
+
+    <div id="sidebar">
+      <div class="sidebar-header">
+        <h2 id="panelTitle">Geographic Factbook</h2>
+      </div>
+      <div class="sidebar-body" id="panelBody">
+        <p><strong>Instructions for Users:</strong></p>
+        <ul style="margin: 8px 0 12px 18px;">
+          <li>Use the top-right box on the map to switch between <strong>Political</strong>, <strong>Physical Topo</strong>, <strong>Relief</strong>, and <strong>Satellite Combined</strong> maps.</li>
+          <li>Pinch or use two fingers to zoom in deeply. You can zoom all the way down to local district lines, highways, and ports in any country, including <strong>Goa</strong>.</li>
+          <li>Click any colored marker on the map to display its facts and geopolitical data below.</li>
+        </ul>
+
+        <h3 style="font-size: 0.8rem; text-transform: uppercase; color: #64748b; margin-top: 15px;">Featured Choke Points:</h3>
+
+        <div class="fact-card" onclick="zoomToQuickLocation('hormuz')">
+          <span class="badge badge-choke">Choke Point</span>
+          <h4>Strait of Hormuz</h4>
+          <p>Between Oman and Iran. Connects the Persian Gulf with the Gulf of Oman. World's most critical oil passage.</p>
+        </div>
+
+        <div class="fact-card" onclick="zoomToQuickLocation('malacca')">
+          <span class="badge badge-choke">Choke Point</span>
+          <h4>Strait of Malacca</h4>
+          <p>Between Indonesia, Malaysia, and Singapore. The shortest sea route connecting the Indian and Pacific Oceans.</p>
+        </div>
+
+        <div class="fact-card" onclick="zoomToQuickLocation('bab')">
+          <span class="badge badge-choke">Choke Point</span>
+          <h4>Bab-el-Mandeb</h4>
+          <p>Connects the Red Sea to the Gulf of Aden. Essential entry gate for maritime cargo traveling toward Europe via Suez.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaflet JavaScript Library -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    /* ================= MAP LAYERS ================= */
+
+    // 1. Political Base Map (Clear country borders, state/district borders, capitals, cities, ports)
+    const politicalLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: 'OpenStreetMap Contributors'
+    });
+
+    // 2. Physical Topography Map (Mountains, elevation contour shading, valleys, plains)
+    const topoLayer = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: 'OpenTopoMap & SRTM Elevation'
+    });
+
+    // 3. Global Physical Relief (Esri Physical World Map)
+    const physicalReliefLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 8,
+      attribution: 'Esri, US National Park Service'
+    });
+
+    // 4. Combined / Hybrid Map (High-Resolution Satellite Imagery + Country Boundaries & Labels)
+    const satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Esri World Imagery'
+    });
+
+    const administrativeLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 19,
+      attribution: 'Esri Reference Labels'
+    });
+
+    const combinedLayer = L.layerGroup([satelliteImagery, administrativeLabels]);
+
+    /* ================= INITIALIZE MAP VIEW ================= */
+    const map = L.map('map', {
+      center: [20, 10],
+      zoom: 3,
+      layers: [politicalLayer]
+    });
+
+    // Map Layer Controls
+    const baseMaps = {
+      "Political Map (Capitals, Cities & Borders)": politicalLayer,
+      "Physical Topographic Map (Mountains & Relief)": topoLayer,
+      "Global Physical Map (Elevation Relief)": physicalReliefLayer,
+      "Combined Hybrid Map (Satellite + Borders)": combinedLayer
+    };
+
+    // Geographic Feature Marker Groups
+    const chokePointsGroup = L.layerGroup();
+    const waterBodiesGroup = L.layerGroup();
+    const mountainsGroup = L.layerGroup();
+
+    const overlayMaps = {
+      "Strategic Straits & Choke Points": chokePointsGroup,
+      "Major Rivers, Lakes & Oceans": waterBodiesGroup,
+      "Mountain Ranges & Plateaus": mountainsGroup
+    };
+
+    L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+
+    // Keep all features enabled by default
+    map.addLayer(chokePointsGroup);
+    map.addLayer(waterBodiesGroup);
+    map.addLayer(mountainsGroup);
+
+    /* ================= GEOGRAPHIC FACT DATA ================= */
+    const geoLocations = [
+      // Choke Points
+      {
+        name: "Strait of Malacca",
+        category: "choke",
+        lat: 4.15,
+        lng: 100.5,
+        details: "Connects the Indian Ocean and the South China Sea. Over 84,000 vessels pass each year, accounting for around 25% of all traded goods globally."
+      },
+      {
+        name: "Strait of Hormuz",
+        category: "choke",
+        lat: 26.56,
+        lng: 56.25,
+        details: "Positioned between Oman and Iran. It connects the Persian Gulf with the Gulf of Oman. Around 21 million barrels of crude oil pass through it daily."
+      },
+      {
+        name: "Bab-el-Mandeb",
+        category: "choke",
+        lat: 12.58,
+        lng: 43.33,
+        details: "Separates Yemen in the Arabian Peninsula from Djibouti and Eritrea in the Horn of Africa. Acts as the southern gate to the Red Sea."
+      },
+      {
+        name: "Suez Canal",
+        category: "choke",
+        lat: 30.70,
+        lng: 32.34,
+        details: "An artificial sea-level waterway in Egypt connecting the Mediterranean Sea to the Red Sea, cutting transit times between Europe and Asia."
+      },
+      {
+        name: "Strait of Gibraltar",
+        category: "choke",
+        lat: 35.96,
+        lng: -5.60,
+        details: "Connects the Atlantic Ocean to the Mediterranean Sea and separates Spain from Morocco by only 13 kilometers at its narrowest point."
+      },
+      {
+        name: "Panama Canal",
+        category: "choke",
+        lat: 9.10,
+        lng: -79.69,
+        details: "Locks-based canal crossing Panama that joins the Atlantic and Pacific oceans, cutting ship travel around Cape Horn by over 12,000 km."
+      },
+      {
+        name: "Bosporus & Dardanelles",
+        category: "choke",
+        lat: 41.11,
+        lng: 29.07,
+        details: "Turkish straits dividing Europe from Asia, connecting the Black Sea to the Sea of Marmara and the Mediterranean Sea."
+      },
+
+      // Water Bodies
+      {
+        name: "Amazon River Basin",
+        category: "river",
+        lat: -3.46,
+        lng: -62.21,
+        details: "The largest river in the world by water discharge volume, draining an extensive rainforest system that accounts for 20% of Earth's river water."
+      },
+      {
+        name: "Nile River",
+        category: "river",
+        lat: 26.82,
+        lng: 30.80,
+        details: "Flows northward through eastern Africa into the Mediterranean Sea. Known historically as the lifeblood of Egyptian civilization."
+      },
+
+      // Mountain Ranges
+      {
+        name: "Himalayas Mountain Range",
+        category: "mountain",
+        lat: 28.59,
+        lng: 83.93,
+        details: "The highest mountain system on Earth, formed by the collision of the Indian and Eurasian tectonic plates. Home to Mount Everest and K2."
+      }
+    ];
+
+    // Marker styling
+    function buildMarker(category) {
+      let color = '#2563eb';
+      if (category === 'choke') color = '#dc2626';
+      if (category === 'river') color = '#0284c7';
+      if (category === 'mountain') color = '#d97706';
+
+      return L.divIcon({
+        className: 'custom-pin',
+        html: `<div style="background-color:${color}; width:14px; height:14px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 0 4px rgba(0,0,0,0.6);"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+    }
+
+    // Add Markers to Map
+    geoLocations.forEach(loc => {
+      const marker = L.marker([loc.lat, loc.lng], { icon: buildMarker(loc.category) });
+      marker.on('click', () => {
+        displayInformation(loc);
+      });
+
+      if (loc.category === 'choke') marker.addTo(chokePointsGroup);
+      else if (loc.category === 'river') marker.addTo(waterBodiesGroup);
+      else if (loc.category === 'mountain') marker.addTo(mountainsGroup);
+    });
+
+    /* ================= SIDEBAR DISPLAY LOGIC ================= */
+    function displayInformation(item) {
+      document.getElementById('panelTitle').innerText = item.name;
+      let badgeClass = 'badge-choke';
+      if (item.category === 'river') badgeClass = 'badge-river';
+      if (item.category === 'mountain') badgeClass = 'badge-mountain';
+
+      document.getElementById('panelBody').innerHTML = `
+        <span class="badge ${badgeClass}">${item.category.toUpperCase()}</span>
+        <h3 style="margin-bottom:6px; font-size:1.05rem;">${item.name}</h3>
+        <p style="margin-bottom:10px; color:#64748b;"><strong>Coordinates:</strong> ${item.lat.toFixed(2)}°N, ${item.lng.toFixed(2)}°E</p>
+        <p style="line-height:1.6; color:#1e293b;">${item.details}</p>
+        <hr style="margin:14px 0; border:0; border-top:1px solid #e2e8f0;">
+        <button onclick="map.flyTo([${item.lat}, ${item.lng}], 7)" style="width:100%; justify-content:center;">Center Map Here</button>
+      `;
+    }
+
+    /* ================= QUICK ZOOM LOCATIONS ================= */
+    const locationsDirectory = {
+      goa: { lat: 15.2993, lng: 74.1240, zoom: 11 }, // Shows North Goa, South Goa, Mormugao port, Panaji, and taluk borders
+      malacca: { lat: 4.15, lng: 100.5, zoom: 6 },
+      hormuz: { lat: 26.56, lng: 56.25, zoom: 7 },
+      bab: { lat: 12.58, lng: 43.33, zoom: 7 },
+      suez: { lat: 30.70, lng: 32.34, zoom: 8 },
+      gibraltar: { lat: 35.96, lng: -5.60, zoom: 8 },
+      panama: { lat: 9.10, lng: -79.69, zoom: 8 },
+      bosphorus: { lat: 41.11, lng: 29.07, zoom: 9 },
+      himalayas: { lat: 28.59, lng: 83.93, zoom: 6 },
+      amazon: { lat: -3.46, lng: -62.21, zoom: 5 },
+      nile: { lat: 27.0, lng: 31.0, zoom: 5 },
+      pacific: { lat: 0, lng: -160, zoom: 3 },
+      indian: { lat: -15, lng: 80, zoom: 3 }
+    };
+
+    function zoomToQuickLocation(key) {
+      if (!key || !locationsDirectory[key]) return;
+      const target = locationsDirectory[key];
+      map.flyTo([target.lat, target.lng], target.zoom, { duration: 1.5 });
+    }
+
+    /* ================= 4K HIGH DEFINITION PDF EXPORT ================= */
+    function generate4KPDF() {
+      map.invalidateSize();
+      setTimeout(() => {
+        window.print();
+      }, 250);
+    }
+  </script>
+</body>
+                                                       </html>
+                                                       
