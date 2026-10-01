@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Global Geography Atlas & World Map Explorer</title>
+  <title>Global Geography Atlas (English Only - No Key Required)</title>
   
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   
   <style>
@@ -180,8 +181,8 @@
 
   <header>
     <div class="title-area">
-      <h1>World Geography Explorer (English)</h1>
-      <p>Political, Physical, Combined Topography & Strategic Choke Points</p>
+      <h1>World Geography Explorer (English Only)</h1>
+      <p>Political, Physical Topography, Hybrid Satellite & Strategic Choke Points</p>
     </div>
 
     <div class="controls-area">
@@ -222,9 +223,9 @@
       <div class="sidebar-body" id="panelBody">
         <p><strong>Instructions for Users:</strong></p>
         <ul style="margin: 8px 0 12px 18px;">
-          <li>All labels and country names are strictly in <strong>English</strong>.</li>
-          <li>Use the top-right box to switch between <strong>Political</strong>, <strong>Physical Topo</strong>, <strong>Relief</strong>, and <strong>Satellite Combined</strong> maps.</li>
-          <li>Pinch to zoom in. You can zoom all the way down to Goa's district borders, ports, and towns.</li>
+          <li>All labels and maps are strictly rendered in <strong>English</strong> without requiring any API key or subscription.</li>
+          <li>Use the layer selector box on the top-right of the map to switch between <strong>English Political</strong>, <strong>English Topographic</strong>, and <strong>Satellite Combined</strong> maps.</li>
+          <li>Pinch to zoom in deeply down to Goa's district borders, towns, highways, and ports.</li>
           <li>Tap any colored pin to read geographic details.</li>
         </ul>
 
@@ -233,13 +234,13 @@
         <div class="fact-card" onclick="zoomToQuickLocation('hormuz')">
           <span class="badge badge-choke">Choke Point</span>
           <h4>Strait of Hormuz</h4>
-          <p>Between Oman and Iran. Connects Persian Gulf to Gulf of Oman. World's most vital oil passage.</p>
+          <p>Between Oman and Iran. Connects Persian Gulf to Gulf of Oman. World's most vital oil transit corridor (~21% of global petroleum).</p>
         </div>
 
         <div class="fact-card" onclick="zoomToQuickLocation('malacca')">
           <span class="badge badge-choke">Choke Point</span>
           <h4>Strait of Malacca</h4>
-          <p>Between Indonesia, Malaysia, and Singapore. Shortest sea route connecting Indian and Pacific Oceans.</p>
+          <p>Between Indonesia, Malaysia, and Singapore. Shortest shipping channel connecting Indian and Pacific Oceans.</p>
         </div>
 
         <div class="fact-card" onclick="zoomToQuickLocation('bab')">
@@ -254,51 +255,50 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    /* ================= 100% ENGLISH BASE MAP LAYERS ================= */
+    /* ================= 100% FREE NO-KEY ENGLISH LAYERS ================= */
 
-    // 1. Political Base (CartoDB Voyager - English text worldwide)
-    const politicalLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    // 1. Political English Map (CartoDB Voyager: 100% English worldwide, clean borders and capitals)
+    const cartoEnglish = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      subdomains: 'abcd',
-      attribution: '&copy; CartoDB & OpenStreetMap'
+      attribution: '&copy; <a href="https://carto.com/">CARTO</a> &copy; OpenStreetMap'
     });
 
-    // 2. Physical Topography Map (English Esri Topo)
-    const topoBase = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+    // 2. High-Contrast English Map (CartoDB Positron: crisp black text for all countries and cities)
+    const cartoPositron = L.tileLayer('https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      attribution: 'Esri World Topographic'
+      attribution: '&copy; CARTO &copy; OpenStreetMap'
     });
 
-    // 3. Global Physical Relief
-    const physicalReliefLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}', {
-      maxZoom: 8,
-      attribution: 'Esri World Physical'
+    // 3. Physical Topographic & Hillshade (OpenTopoMap: mountain contour shading, valleys, elevation)
+    const openTopo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+      maxZoom: 17,
+      attribution: 'OpenTopoMap & SRTM'
     });
 
-    // 4. Combined Satellite + English Labels
+    // 4. Combined Satellite + English Carto Labels
     const satelliteImagery = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
       maxZoom: 19,
-      attribution: 'Esri World Imagery'
+      attribution: 'Imagery &copy; Esri'
     });
 
-    const englishLabels = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+    const englishLabelsOverlay = L.tileLayer('https://basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png', {
       maxZoom: 19,
-      attribution: 'Esri Reference'
+      attribution: 'Labels &copy; CARTO'
     });
 
-    const combinedLayer = L.layerGroup([satelliteImagery, englishLabels]);
+    const combinedLayer = L.layerGroup([satelliteImagery, englishLabelsOverlay]);
 
     /* ================= MAP INITIALIZATION ================= */
     const map = L.map('map', {
       center: [20, 10],
       zoom: 3,
-      layers: [politicalLayer]
+      layers: [cartoEnglish] // Default clean English layer with NO KEY needed
     });
 
     const baseMaps = {
-      "Political Map (English Labels & Borders)": politicalLayer,
-      "Physical Topographic Map (English)": topoBase,
-      "Global Physical Map (Elevation Relief)": physicalReliefLayer,
+      "Political Map (100% English - No Key)": cartoEnglish,
+      "Physical Topographic Map (Mountains & Relief)": openTopo,
+      "Clear Border & City View (English)": cartoPositron,
       "Combined Hybrid Map (Satellite + English Labels)": combinedLayer
     };
 
@@ -463,4 +463,5 @@
     }
   </script>
 </body>
-</html>
+  </html>
+  
